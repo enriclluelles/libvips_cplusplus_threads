@@ -1,0 +1,7 @@
+[requires]
+libvips/8.15.2
+boost/1.85.0
+
+[generators]
+CMakeDeps
+CMakeToolchain

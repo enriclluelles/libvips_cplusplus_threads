@@ -1,0 +1,35 @@
+cmake_minimum_required(VERSION 3.15)
+project(convert LANGUAGES CXX)
+
+find_package(libvips REQUIRED)
+find_package(boost REQUIRED)
+
+add_compile_options(--std=c++20)
+add_compile_options(-DBOOST_THREAD_PROVIDES_FUTURE_CONTINUATION=1)
+add_compile_options(-DBOOST_THREAD_PROVIDES_EXECUTORS=1)
+add_compile_options(-DBOOST_THREAD_USES_MOVE=1)
+add_compile_options(-DBOOST_THREAD_MOVABLE_ONLY=0)
+
+add_executable(${PROJECT_NAME} src/main.cc)
+target_link_libraries(${PROJECT_NAME} boost::boost libvips::libvips)
+
+function(clangd_include_dirs)
+    set(include_dir_str "")
+    foreach(DIR ${CMAKE_INCLUDE_PATH})
+        set(include_dir_str "${include_dir_str}\n    - \"-I${DIR}\"")
+    endforeach()
+    get_target_property(COPTIONS ${PROJECT_NAME} COMPILE_OPTIONS)
+    set(clang_compile_flags "")
+    foreach(FLAG ${COPTIONS})
+      set(clang_compile_flags "${clang_compile_flags}\n    - \"${FLAG}\"")
+    endforeach()
+
+    set(pth "${CMAKE_BINARY_DIR}/../.clangd")
+    file(WRITE "${pth}" "CompileFlags:\n")
+    file(APPEND "${pth}" "  Add:")
+    file(APPEND "${pth}" "${include_dir_str}")
+    file(APPEND "${pth}" "${clang_compile_flags}")
+    message(STATUS "Conan include directories written to: ${pth}")
+endfunction()
+
+clangd_include_dirs()

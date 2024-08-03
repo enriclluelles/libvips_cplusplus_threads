@@ -28,10 +28,10 @@ main (int argc, char **argv)
   auto pool = boost::executors::basic_thread_pool();
   mutex m;
 
-  VImage* images = new VImage[npages];
+  vector<VImage> v(npages);
 
   for (int i = 0; i < npages; i++) {
-    pool.submit([images, i, width, height, source, &m] () {
+    pool.submit([&v, i, width, height, source, &m] () {
       auto opts = "[n=1, page=" + to_string(i) + "]";
       auto page = VImage::new_from_source(source, opts.c_str());
       auto option = VImage::option()->set("height", height);
@@ -44,7 +44,7 @@ main (int argc, char **argv)
         .write(result);
 
       m.lock();
-      images[i] = result;
+      v[i] = result;
       m.unlock();
     });
   }
@@ -52,16 +52,10 @@ main (int argc, char **argv)
   pool.close();
   pool.join();
 
-  vector<VImage> v;
-  for(int i = 0; i < npages; i++) {
-    v.push_back(images[i]);
-  }
-
   auto joined = VImage::arrayjoin(v, VImage::option()->set("across", 1));
   joined.set("page-height", height);
   joined.set("delay", std::vector(delay.begin(), delay.begin() + npages));
   joined.write_to_file(argv[2]);
-
 
   vips_shutdown ();
 

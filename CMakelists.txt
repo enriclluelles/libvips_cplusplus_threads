@@ -2,16 +2,12 @@ cmake_minimum_required(VERSION 3.15)
 project(convert LANGUAGES CXX)
 
 find_package(libvips REQUIRED)
-find_package(boost REQUIRED)
 
 add_compile_options(--std=c++20)
-add_compile_options(-DBOOST_THREAD_PROVIDES_FUTURE_CONTINUATION=1)
-add_compile_options(-DBOOST_THREAD_PROVIDES_EXECUTORS=1)
-add_compile_options(-DBOOST_THREAD_USES_MOVE=1)
-add_compile_options(-DBOOST_THREAD_MOVABLE_ONLY=0)
 
 add_executable(${PROJECT_NAME} src/main.cc)
-target_link_libraries(${PROJECT_NAME} boost::boost libvips::libvips)
+
+target_link_libraries(${PROJECT_NAME} libvips::libvips)
 
 function(clangd_include_dirs)
     set(include_dir_str "")

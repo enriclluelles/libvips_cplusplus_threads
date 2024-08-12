@@ -1,9 +1,9 @@
 #include <cstdio>
+#include <future>
 #include <mutex>
 #include <vector>
 #include <iterator>
 #include <vips/vips8>
-#include <boost/thread/executors/basic_thread_pool.hpp>
 
 using namespace vips;
 using namespace std;
@@ -25,13 +25,13 @@ main (int argc, char **argv)
   int width = atoi(argv[3]);
   int height = atoi(argv[4]);
 
-  auto pool = boost::executors::basic_thread_pool();
   mutex m;
 
   vector<VImage> v(npages);
+  vector<future<void>> f;
 
   for (int i = 0; i < npages; i++) {
-    pool.submit([&v, i, width, height, source, &m] () {
+    f.push_back(std::async([&v, i, width, height, source, &m] () {
       auto opts = "[n=1, page=" + to_string(i) + "]";
       auto page = VImage::new_from_source(source, opts.c_str());
       auto option = VImage::option()->set("height", height);
@@ -46,11 +46,12 @@ main (int argc, char **argv)
       m.lock();
       v[i] = result;
       m.unlock();
-    });
+    }));
   }
 
-  pool.close();
-  pool.join();
+  for (auto &future : f) {
+    future.wait();
+  }
 
   auto joined = VImage::arrayjoin(v, VImage::option()->set("across", 1));
   joined.set("page-height", height);
